@@ -6,12 +6,12 @@ services:
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
-      - MQTT_BROKER_HOST=${MQTT_BROKER_HOST:-mosquitto}  # usa 'host.docker.internal' se broker è sul PC host
-      - MQTT_BROKER_PORT=1883
-      - INFLUX_URL=http://influxdb:8086
-      - INFLUX_TOKEN=pump-super-secret-token
-      - INFLUX_ORG=pump-org
-      - INFLUX_BUCKET=pump-data
+      - MQTT_BROKER_HOST=${MQTT_BROKER_HOST:-mosquitto}  
+      - MQTT_BROKER_PORT=${MQTT_BROKER_PORT}
+      - INFLUX_URL=${INFLUX_URL}
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - INFLUX_ORG=${INFLUX_ORG}
+      - INFLUX_BUCKET=${INFLUX_BUCKET}
     volumes:
       - ./config:/app/config:ro
       - ./data:/app/data
@@ -40,11 +40,11 @@ services:
       - "8086:8086"
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=admin
-      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword123
-      - DOCKER_INFLUXDB_INIT_ORG=pump-org
-      - DOCKER_INFLUXDB_INIT_BUCKET=pump-data
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=pump-super-secret-token
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_ADMIN_USER}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_ADMIN_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
     volumes:
       - influx_data:/var/lib/influxdb2
     networks:
