@@ -2,7 +2,7 @@
 
 ## 🎯 Obiettivo
 
-Progettazione e implementazione di una pipeline completa per **Predictive Maintenance** (manutenzione predittiva) su una pompa centrifuga industriale. Il sistema raccoglie dati fisiologici della macchina, li archivia in serie temporali e prepara dataset strutturati per l'addestramento di modelli ML (anomaly detection, regressione RUL - Remaining Useful Life).
+Progettazione e implementazione di una pipeline completa per **Predictive Maintenance** (manutenzione predittiva) su una pompa centrifuga industriale. Il sistema raccoglie dati fisiologici della macchina, li archivia in serie temporali e prepara dataset strutturati per l'addestramento di modelli ML (anomaly detection, regressione RUL - Remaining Useful Life). Invece di usare dataset publici fittizi, ho simulato una pompa centrifuga industriale con ESP32. I dati seguono curve di usura realistiche (Weibull) e correlazioni fisiche reali (ISO 10816 per le vibrazioni). In tal modo posso avere maggiore controllo sulla ground truth al fine di validare meglio i modelli ML nella Fase 2. 
 
 **Stato attuale**: Fase 1 (Data Collection & Storage) ✓  
 **Prossima milestone**: Fase 2 (Feature Engineering, Training e Validazione modelli)
@@ -23,11 +23,6 @@ Progettazione e implementazione di una pipeline completa per **Predictive Mainte
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-blue)](https://docs.docker.com/compose/)
 [![MQTT](https://img.shields.io/badge/Protocol-MQTT-orange)](https://mqtt.org/)
 [![InfluxDB](https://img.shields.io/badge/DB-InfluxDB%202.x-red)](https://www.influxdata.com/)
-
-
-## Data acquisition
-
-Invece di usare dataset publici fittizi, ho simulato una pompa centrifuga industriale con ESP32. I dati seguono curve di usura realistiche (Weibull) e correlazioni fisiche reali (ISO 10816 per le vibrazioni). In tal modo posso avere maggiore controllo sulla ground truth al fine di validare meglio i modelli ML nella Fase 2. 
 
 ## Architettura attuale
 
