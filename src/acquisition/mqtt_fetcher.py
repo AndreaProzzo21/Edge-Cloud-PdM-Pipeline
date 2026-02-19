@@ -16,9 +16,7 @@ class MQTTPumpFetcher:
     Gestisce due topic e li mergia tramite measurement_id.
     """
     def __init__(self, output_queue: queue.Queue, config_path: str = "config/mqtt.yaml"):
-        self.output_queue = output_queue  # Coda verso il processing successivo
-        
-        # Carica config
+        self.output_queue = output_queue
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
             
