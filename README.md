@@ -141,7 +141,6 @@ To validate the model beyond "perfect" simulations, the Edge firmware includes a
 | **Broker** | Eclipse Mosquitto | MQTT message orchestration |
 | **Inference** | Python 3.12 + Scikit-Learn | Real-time ML Prediction |
 | **Containerization** | Docker & Docker Compose | Microservices isolation & MLOps |
-| **Configuration** | Dotenv (.env) | Decoupled environment management |
 
 ---
 
