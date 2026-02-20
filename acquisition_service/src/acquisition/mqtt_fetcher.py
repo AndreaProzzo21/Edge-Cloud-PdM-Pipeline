@@ -7,14 +7,11 @@ import yaml
 import paho.mqtt.client as mqtt
 from pydantic import ValidationError, TypeAdapter
 
-from domain.models.schemas import TelemetryPayload, GroundTruthPayload, MergedDataPoint
+from domain.schemas.telemetry_schemas import TelemetryPayload, GroundTruthPayload, MergedDataPoint
 from acquisition.buffer_merger import MeasurementBuffer
 
 class MQTTPumpFetcher:
-    """
-    Fetcher dedicato al progetto Pump001.
-    Gestisce due topic e li mergia tramite measurement_id.
-    """
+
     def __init__(self, output_queue: queue.Queue, config_path: str = "config/mqtt.yaml"):
         self.output_queue = output_queue
         with open(config_path, 'r') as f:

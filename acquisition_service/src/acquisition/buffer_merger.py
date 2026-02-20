@@ -2,7 +2,7 @@ import time
 import threading
 from collections import deque
 from typing import Optional, Dict, Callable
-from domain.models.schemas import TelemetryPayload, GroundTruthPayload, MergedDataPoint
+from domain.schemas.telemetry_schemas import TelemetryPayload, GroundTruthPayload, MergedDataPoint
 
 class MeasurementBuffer:
     """

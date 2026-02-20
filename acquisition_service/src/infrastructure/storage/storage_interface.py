@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from domain.models.schemas import MergedDataPoint
+from domain.schemas.telemetry_schemas import MergedDataPoint
 
 class StorageInterface(ABC):
     """Contratto per tutti gli storage (Influx, CSV, etc.)"""

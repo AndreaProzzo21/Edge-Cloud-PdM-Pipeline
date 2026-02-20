@@ -5,7 +5,7 @@ import time
 from typing import Optional
 from datetime import datetime
 
-from domain.models.schemas import MergedDataPoint
+from domain.schemas.telemetry_schemas import MergedDataPoint
 from infrastructure.storage.storage_interface import StorageInterface
 from infrastructure.storage.influx_writer import InfluxDBWriter
 

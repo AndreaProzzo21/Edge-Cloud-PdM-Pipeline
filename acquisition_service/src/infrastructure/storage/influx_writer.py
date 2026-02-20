@@ -5,7 +5,7 @@ from typing import List
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS, WriteOptions
 
-from domain.models.schemas import MergedDataPoint
+from domain.schemas.telemetry_schemas import MergedDataPoint
 from infrastructure.storage.storage_interface import StorageInterface
 
 logger = logging.getLogger(__name__)

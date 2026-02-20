@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Script standalone per esportare dati training da InfluxDB a CSV.
 Da eseguire manualmente quando si vuole fare il training.
@@ -8,8 +8,6 @@ import sys
 import os
 import argparse
 from datetime import datetime
-
-# Aggiungi src al path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
@@ -28,7 +26,6 @@ def main():
     
     args = parser.parse_args()
     
-    # Config (stesse env var della pipeline)
     url = os.getenv("INFLUX_URL", "http://localhost:8086")
     token = os.getenv("INFLUX_TOKEN", "pump-super-secret-token")
     org = os.getenv("INFLUX_ORG", "pump-org")

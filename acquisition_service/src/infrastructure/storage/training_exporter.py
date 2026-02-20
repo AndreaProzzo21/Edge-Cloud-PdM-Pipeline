@@ -4,7 +4,7 @@ from typing import Optional
 from influxdb_client import InfluxDBClient
 
 class TrainingDataExporter:
-    """Estrae dati da InfluxDB in formato CSV pronto per ML (flat table)."""
+    """Estrae dati da InfluxDB in formato CSV pronto per MLs."""
     
     def __init__(self, client: InfluxDBClient, bucket: str, org: str):
         self.client = client
