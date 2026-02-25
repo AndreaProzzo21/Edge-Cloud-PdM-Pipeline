@@ -1,8 +1,8 @@
 import os
 import logging
-from communication.mqtt_fetcher import MQTTPumpFetcher
-from application.predictor import PumpPredictor
-from application.inference_manager import InferenceManager
+from mqtt_fetcher import MQTTPumpFetcher
+from predictor import PumpPredictor
+from inference_manager import InferenceManager
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
