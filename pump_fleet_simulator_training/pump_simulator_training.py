@@ -100,14 +100,23 @@ class TrainingSimulator:
             print(f"❌ Error: {e}")
 
 if __name__ == "__main__":
-    # Parametri rapidi per generare dataset velocemente
-    BROKER = "172.17.0.1" 
-    NUM_PUMPS_FOR_TRAIN = 3 
+   
+    BROKER = os.getenv("MQTT_BROKER_HOST", "172.17.0.1") 
+    PORT = int(os.getenv("MQTT_BROKER_PORT", 1883))
+    TOPIC_BASE = os.getenv("MQTT_TRAINING_TOPIC", "factory/training")
     
+    # Quante pompe simulare contemporaneamente
+    NUM_PUMPS_FOR_TRAIN = int(os.getenv("NUM_TRAIN_PUMPS", 3))
+    # Velocità di invio (secondi tra un messaggio e l'altro)
+    INTERVAL = float(os.getenv("SIM_INTERVAL", 0.1)) 
+    
+    print(f"🚀 Avvio simulazione training su {BROKER}:{PORT}")
+    print(f"📊 Pompe in parallelo: {NUM_PUMPS_FOR_TRAIN} | Intervallo: {INTERVAL}s")
+
     threads = []
     for i in range(NUM_PUMPS_FOR_TRAIN):
-        sim = TrainingSimulator(f"TRAIN-PUMP-{i+1:03d}", BROKER, 1883, "factory/training")
-        t = threading.Thread(target=sim.run, args=(0.2,)) # Invio rapido 5Hz
+        sim = TrainingSimulator(f"TRAIN-PUMP-{i+1:03d}", BROKER, PORT, TOPIC_BASE)
+        t = threading.Thread(target=sim.run, args=(INTERVAL,)) 
         t.start()
         threads.append(t)
         
