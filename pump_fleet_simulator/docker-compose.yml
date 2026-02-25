@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  pump_simulator:
+    build: .
+    container_name: fleet_simulator
+    restart: unless-stopped
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10mb"
+        max-file: "3"
