@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   mosquitto:
     image: eclipse-mosquitto:latest
@@ -6,9 +7,10 @@ services:
       - "1883:1883"
     volumes:
       - ./mosquitto/config:/mosquitto/config:ro
+    networks:
+      - pump_network
     restart: unless-stopped
 
-  
   inference_engine:
     build: .
     container_name: inference_engine
@@ -18,6 +20,11 @@ services:
       - ./src:/app/src
       - ./models:/app/models
       - ./data:/app/data
-    env_file:
-      - .env
+    env_file: .env
+    networks:
+      - pump_network
     restart: on-failure
+
+networks:
+  pump_network:
+    external: true
