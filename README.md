@@ -2,129 +2,97 @@
 
 ## 🎯 Overview
 
-This project implements an end-to-end **Cloud-Native Predictive Maintenance (PdM)** pipeline for industrial centrifugal pumps. Instead of using static datasets, the system employs a **Digital Twin** approach: an ESP32 simulates a 5kW industrial pump, generating real-time telemetry based on physical correlations (ISO 10816 standards) and non-linear degradation curves (Weibull).
+This project implements an end-to-end **Cloud-Native Predictive Maintenance (PdM)** pipeline for industrial centrifugal pumps. The system has transitioned from hardware-based simulation to a fully containerized **Digital Twin Environment**.
 
-The architecture has evolved from simple data collection to a **Distributed Microservices Ecosystem** deployed on **AWS (EC2)**, capable of real-time inference and anomaly detection under stressed conditions.
+Instead of static datasets, the pipeline uses high-fidelity Python simulators that model physical correlations (ISO 10816) and non-linear degradation curves. The architecture is a **Distributed Microservices Ecosystem** deployed on **AWS (EC2)**, designed for real-time scale (100+ devices).
 
 ---
 
 ## 🏗️ System Architecture & Microservices
 
-The project is engineered as a **Distributed Microservices Architecture**, where the Edge layer communicates directly with the AWS Cloud infrastructure. The logic is decoupled into two independent services to ensure scalability and separation of concerns.
+The project is engineered as a decoupled microservices architecture, where the simulation layer and the processing layer communicate via a high-performance MQTT backbone.
 
-### 🛰️ Edge Layer (The Digital Twin)
+### 🛰️ Simulation Layer (Digital Twin Engine)
 
-* **ESP32 Core**: Acts as the physical data source, simulating complex industrial physics.
-* **Direct Cloud Uplink**: Telemetry is transmitted via MQTT (QoS 1) directly to the AWS EC2 Elastic IP, bypassing local gateways to simulate a remote industrial site.
-* **Firmware Scenarios**: Switchable logic between *Data Collection Mode* (with Ground Truth) and *Inference Mode* (Raw data + Chaos Engine).
+* **Training Simulator**: Generates rapid, labeled datasets by simulating the entire lifecycle of a pump (from healthy to broken) using Weibull-based degradation. It includes `Ground Truth` labels for supervised learning.
+* **Production Simulator**: Simulates real-time telemetry across different operational modes (`NOMINAL`, `ACCELERATED`, `STRESS`) and includes a **Chaos Engine** for robustness testing.
+* **Direct Cloud Uplink**: Telemetry is transmitted via MQTT (QoS 1) to the AWS EC2 Broker.
 
 ### 🛠️ Service A: Acquisition & Training (Offline/Batch)
 
-* **Role**: Data Lake management and Model Research.
+* **Role**: Data Lake management and Model Synthesis.
 * **Workflow**:
-1. **Ingestion**: A dedicated Python service subscribes to telemetry + ground truth.
-2. **Storage**: High-performance persistence in **InfluxDB**.
-3. **Offline Training**: Machine Learning models are trained in a protected environment (local or dedicated container) using the exported historical data.
+1. **Ingestion**: A Python service consumes `training_data` topics.
+2. **Storage**: High-performance time-series persistence in **InfluxDB 2.x**.
+3. **Export**: A dedicated CLI tool (`export_training_data.py`) extracts balanced datasets from InfluxDB to CSV.
+4. **Offline Training**: Data is transferred to a local workstation where Random Forest and StandardScaler models are synthesized using Scikit-Learn. This decoupled approach ensures that heavy ML computation does not impact the real-time cloud acquisition stability.
 
 
-* **Output**: Serialized model artifacts (`.pkl` files: Scaler, Classifier, LabelEncoder).
+* **Output**: Serialized ML artifacts (`.pkl`: Scaler, Classifier, LabelEncoder).
+
 
 ### 🧠 Service B: Inference Service (Online/Real-Time)
 
 * **Role**: Live Monitoring and Diagnostic Engine.
-* **Deployment**: Production-ready Docker container on **AWS**.
-* **Hot-Loading**: The service "consumes" the pre-trained models. It remains completely agnostic of the training logic, focusing exclusively on high-speed prediction.
-* **Real-time Pipeline**:
-`Raw MQTT Data` → `StandardScaler` → `Random Forest Predictor` → `Persistent CSV Logs`.
-
----
-
-## 🔄 The Model Lifecycle (MLOps)
-
-1. **Phase 1 (Discovery)**: The **Acquisition Service** runs to build the knowledge base.
-2. **Phase 2 (Synthesis)**: Training is performed **offline** to optimize hyperparameters without consuming Cloud compute resources.
-3. **Phase 3 (Deployment)**: Optimized models are "shipped" to the **Inference Service** on AWS.
-4. **Phase 4 (Validation)**: The **Chaos Engine** on the ESP32 stress-tests the deployed models against unpredictable industrial noise.
-
----
-Certamente, inserire il diagramma in una sezione dedicata rende il README estremamente professionale e facilita la comprensione immediata dell'architettura a chiunque legga il repository.
-
-Ecco la sezione completa da aggiungere al tuo file:
+* **Hot-Loading**: The service "consumes" pre-trained models and performs real-time scaling and prediction on incoming raw MQTT streams.
+* **Real-time Pipeline**: `Raw MQTT Data` → `StandardScaler` → `Random Forest Predictor` → `Persistent JSON/CSV Logs`.
 
 ---
 
 ## 🗺️ Visual Architecture
 
-The following diagram illustrates the decoupled nature of the system at the current state, highlighting the separation between the **Real-time Inference Flow** (Online) and the **Model Training Pipeline** (Offline).
+The diagram below highlights the separation between the **Training Data Generation** and the **Real-time Inference Service**.
 
 ```mermaid
-graph LR
-    %% Orientamento Orizzontale
-    
-    subgraph Edge ["EDGE LAYER"]
-        A[ESP32 Digital Twin] --> B{Chaos Engine}
+graph TD
+    subgraph Simulators ["DIGITAL TWIN LAYER (Dockerized)"]
+        A1[Training Simulator] -->|MQTT + Ground Truth| B
+        A2[Production Simulator] -->|MQTT Raw Data| B
     end
 
-    subgraph Cloud ["AWS CLOUD (EC2)"]
-        B -->|MQTT| C[Mosquitto Broker]
+    subgraph Infrastructure ["AWS CLOUD (EC2)"]
+        B[Mosquitto Broker] --> C[Acquisition Service]
+        B --> D[Inference Service]
         
-        subgraph Inference ["INFERENCE SERVICE"]
-            C --> D[MQTT Fetcher]
-            D --> E[Inference Manager]
-            E --> F[Random Forest Predictor]
-            F -->|Result| G[(Live Logs CSV)]
-        end
+        C --> E[(InfluxDB 2.8)]
+        D --> F[Random Forest Predictor]
+        F --> G[(Prediction Logs)]
     end
 
-    subgraph Training ["OFFLINE PHASE"]
-        H[(InfluxDB)] -.->|Dataset| I[ML Training]
-        I -.->|Serialized .pkl| F
+    subgraph MLOps ["OFFLINE PHASE"]
+        E -.->|CSV Export| H[Model Training]
+        H -.->|Serialized .pkl| F
     end
 
-    %% Styling minimale e professionale
-    style Edge fill:none,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
-    style Cloud fill:none,stroke:#333,stroke-width:1px
-    style Training fill:none,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
-    style Inference fill:#f8f9fa,stroke:#333,stroke-width:1px
+    style Simulators fill:#f1f8ff,stroke:#0366d6,stroke-width:1px
+    style Infrastructure fill:#fff,stroke:#333,stroke-width:1px
+    style MLOps fill:#fff5f5,stroke:#cb2431,stroke-width:1px,stroke-dasharray: 5 5
 
 ```
 
-### Key Architectural Concepts:
-
-* **Data Decoupling**: The ESP32 is completely unaware of the ML model; it simply streams physical parameters.
-* **Artifact Injection**: The `.pkl` files (StandardScaler, Random Forest) are trained offline and "shipped" to the Cloud Inference Service. This allows for model updates without redeploying the entire infrastructure.
-* **Resilience Testing**: The **Chaos Engine** acts as a middleware at the Edge, simulating sensor failures and environmental shifts before the data reaches the AWS Broker.
-
 ---
 
-## ⚡ Chaos Engineering & Model Robustness
+## ⚡ Chaos Engineering & Operational Modes
 
-To validate the model beyond "perfect" simulations, the Edge firmware includes a **Chaos Engine** that triggers 5 industrial anomaly scenarios:
+The **Production Simulator** includes a **Chaos Engine** to validate model robustness against unpredictable industrial events:
 
-1. **Heatwave Drift**: Persistent +15°C ambient temperature increase.
-2. **Mechanical Spike**: 12mm/s impulsive vibration glitches (sensor noise).
-3. **Cavitation**: Hydraulic instability and pressure drops.
-4. **Voltage Drop**: Electrical overcurrent with RPM loss.
-5. **Sensor Freeze**: Simulating hardware failure (Vibration at 0).
+1. **Vibration Glitches**: Random spikes in `vibration_x` (sensor noise).
+2. **Heatwave Drift**: Sudden +15°C temperature peaks.
+3. **Operational Modes**:
+* `NOMINAL`: Real-time wear simulation (~27 hours lifecycle).
+* `ACCELERATED`: Compressed lifecycle (20 minutes).
+* `STRESS`: Extreme conditions (2.5 minutes) for rapid pipeline testing.
+
+
 
 ---
 
 ## 🚀 Key Features
 
-* **Microservices Decoupling**: Each service (Inference, Broker, Database) is independent. The system is designed to scale; adding a "Notification Service" or "Dashboard Service" requires zero downtime for the core engine.
-* **Cloud-Native**: Optimized for AWS deployment with minimal disk footprint and efficient memory management.
-* **Real-Time MLOps**: Automated pipeline from raw MQTT packets to labeled CSV predictions.
-* **Scalable Configuration**: All parameters (MQTT topics, Model paths, AWS endpoints) are managed via environment variables.
-
----
-
-## 🛤️ Project Roadmap
-
-* [x] **Phase 1: Physical Simulation & InfluxDB Storage**
-* [x] **Phase 2: Cloud Deployment & Real-time Inference Service**
-* [x] **Phase 3: Chaos Engineering & Robustness Validation**
-* [ ] **Phase 4: Async Notification Microservice (Twilio/Telegram Alerts)**
-* [ ] **Phase 5: Grafana Dashboard Integration for Live Monitoring**
+* **Ground Truth Injection**: The Training Simulator provides the "State" (HEALTHY, WARNING, FAULTY, BROKEN) for accurate model training.
+* **Scalable Architecture**: Support for 100+ concurrent pump simulations using Python threading.
+* **Cloud-Native & Dockerized**: Entirely managed via `docker-compose`, with environment-driven configurations.
+* **Persistence**: Dual-layer storage (InfluxDB for telemetry, local volumes for predictions/CSV).
 
 ---
 
@@ -132,20 +100,30 @@ To validate the model beyond "perfect" simulations, the Edge firmware includes a
 
 | Component | Technology | Role |
 | --- | --- | --- |
-| **Edge Device** | ESP32 (C++/Arduino) | Physical simulation & Chaos injection |
+| **Simulators** | Python 3.12 (Threading) | Digital Twin & Chaos injection |
 | **Cloud Provider** | AWS (EC2) | Infrastructure hosting |
 | **Broker** | Eclipse Mosquitto | MQTT message orchestration |
-| **Inference** | Python 3.12 + Scikit-Learn | Real-time ML Prediction |
-| **Containerization** | Docker & Docker Compose | Microservices isolation & MLOps |
+| **Database** | InfluxDB 2.8 | Time-series data lake |
+| **Inference** | Scikit-Learn | Real-time ML Prediction |
+| **Automation** | n8n | (Optional) Alerting & Orchestration |
+
+---
+
+## 🛤️ Project Roadmap
+
+* [x] **Phase 1**: Python Digital Twin Simulators with Degradation logic.
+* [x] **Phase 2**: Acquisition Service & InfluxDB integration.
+* [x] **Phase 3**: Real-time Inference Service on AWS.
+* [ ] **Phase 4**: Grafana Dashboards for Health Monitoring.
+* [ ] **Phase 5**: Telegram Bot alerts for `FAULTY/BROKEN` states via n8n.
 
 ---
 
 ## 📄 Standards & Research Compliance
 
-Telemetry is calibrated against:
+The simulated telemetry follows:
 
-* **ISO 10816**: Vibration severity zones for industrial machines.
-* **API 610**: Centrifugal pumps for petroleum, petrochemical, and natural gas industries.
+* **ISO 10816**: For vibration severity grading.
+* **Weibull Distribution**: For modeling the "Bathtub Curve" of mechanical failure.
 
 ---
-
