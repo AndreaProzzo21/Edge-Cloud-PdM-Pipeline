@@ -103,25 +103,30 @@ The **Production Simulator** includes a **Chaos Engine** to validate model robus
 | **Broker** | Eclipse Mosquitto | MQTT message orchestration |
 | **Database** | InfluxDB 2.8 | Time-series data lake |
 | **Inference** | Scikit-Learn | Real-time ML Prediction |
-| **Automation** | n8n | (Optional) Alerting & Orchestration |
 
 ---
 
-## 🛤️ Project Roadmap
+Ottima idea. Questa aggiunta dimostra che hai una visione chiara dell'evoluzione del sistema verso una piattaforma **Full-Stack IoT**.
 
-* [x] **Phase 1**: Python Digital Twin Simulators with Degradation logic.
-* [x] **Phase 2**: Acquisition Service & InfluxDB integration.
-* [x] **Phase 3**: Real-time Inference Service on AWS.
-* [ ] **Phase 4**: Grafana Dashboards for Health Monitoring.
-* [ ] **Phase 5**: Telegram Bot alerts for `FAULTY/BROKEN` states via n8n.
+Possiamo strutturare questa parte sotto il titolo **"Future Work & Evolutionary Roadmap"**, spiegando le due possibili strade tecnologiche: una rapida e professionale (Grafana) e una custom (React + FastAPI).
+
+Ecco la sezione aggiornata in inglese da inserire nel tuo `README.md`:
 
 ---
 
-## 📄 Standards & Research Compliance
+## 🛤️ Project Roadmap & Future Evolutions
 
-The simulated telemetry follows:
+* **Phase 1**: Python-based Digital Twin Simulators with advanced degradation logic.
+* **Phase 2**: Cloud Acquisition Service & InfluxDB 2.8 time-series integration.
+* **Phase 3**: Real-time Inference Engine on AWS (Random Forest deployment).
 
-* **ISO 10816**: For vibration severity grading.
-* **Weibull Distribution**: For modeling the "Bathtub Curve" of mechanical failure.
+### Next Step: Real-Time Monitoring Microservice
+
+The upcoming evolution focuses on a centralized monitoring dashboard to visualize pump health and system telemetry. Two architectural paths are under consideration:
+
+* **Path A (Integrated Dashboarding)**: Leveraging **Grafana** connected directly to InfluxDB, with an MQTT data fetcher to bridge inference results into visual panels. This provides a professional-grade, rapid-deployment monitoring solution.
+* **Path B (Custom Full-Stack)**: Developing a dedicated monitoring portal using **React.js** for the frontend, powered by a **FastAPI** backend. This microservice will expose APIs to fetch live inference data, store historical predictions in a relational database, and provide custom data export features.
 
 ---
+
+
