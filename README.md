@@ -83,8 +83,6 @@ The **Production Simulator** includes a **Chaos Engine** to validate model robus
 * `ACCELERATED`: Compressed lifecycle (20 minutes).
 * `STRESS`: Extreme conditions (2.5 minutes) for rapid pipeline testing.
 
-
-
 ---
 
 ## 🚀 Key Features
