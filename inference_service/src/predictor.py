@@ -7,41 +7,41 @@ logger = logging.getLogger("Predictor")
 
 class PumpPredictor:
     def __init__(self, model_dir):
-        # Carichiamo i file .pkl
         try:
-            self.scaler = joblib.load(os.path.join(model_dir, 'scaler.pkl'))
-            self.clf = joblib.load(os.path.join(model_dir, 'classifier_state.pkl'))
-            self.le = joblib.load(os.path.join(model_dir, 'label_encoder.pkl'))
-            logger.info("🧠 Modelli ML caricati correttamente in memoria.")
+            self.scaler = joblib.load(os.path.join(model_dir, 'scaler_v2.pkl'))
+            self.clf = joblib.load(os.path.join(model_dir, 'classifier_state_v2.pkl'))
+            self.reg = joblib.load(os.path.join(model_dir, 'regressor_health_v2.pkl')) # Carichiamo il regressore
+            self.le = joblib.load(os.path.join(model_dir, 'label_encoder_v2.pkl'))
+            logger.info("🧠 Modelli ML (Classificatore + Regressore) caricati correttamente.")
         except Exception as e:
             logger.critical(f"💀 Impossibile caricare i modelli: {e}")
             raise
 
     def predict(self, data):
-        """
-        Riceve il dizionario dei sensori e restituisce lo stato predetto.
-        """
-        # L'ordine deve essere IDENTICO a quello del training sul tuo PC
         feature_order = [
             'current', 'pressure', 'rpm', 'temperature', 
             'vibration_rms', 'vibration_x', 'vibration_y', 'vibration_z'
         ]
         
         try:
-            # Estraiamo i valori nell'ordine corretto
             input_data = [data[f] for f in feature_order]
-            
-            # Trasformazione per Scikit-Learn
             X = np.array(input_data).reshape(1, -1)
             X_scaled = self.scaler.transform(X)
             
-            # Predizione numerica
+            # 1. Predizione dello STATO (Classificazione)
             class_idx = self.clf.predict(X_scaled)[0]
-            
-            # Traduzione in stringa (HEALTHY, WARNING, ecc.)
             state_label = self.le.inverse_transform([class_idx])[0]
             
-            return state_label
+            # 2. Predizione della SALUTE (Regressione)
+            # Usiamo .clip(0, 100) per evitare che il modello sputi fuori valori assurdi tipo -5% o 105%
+            predicted_health = float(self.reg.predict(X_scaled)[0])
+            predicted_health = max(0, min(100, predicted_health))
+            
+            return {
+                "state": state_label,
+                "health": round(predicted_health, 2)
+            }
+            
         except KeyError as e:
             logger.error(f"❌ Dato mancante nel JSON MQTT: {e}")
-            return "DATA_ERROR"
+            return None

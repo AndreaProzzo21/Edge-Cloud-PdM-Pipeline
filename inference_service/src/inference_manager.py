@@ -1,36 +1,50 @@
 import os
 import pandas as pd
+import json
 from datetime import datetime
 import logging
 
 logger = logging.getLogger("InferenceManager")
 
 class InferenceManager:
-    def __init__(self, predictor, csv_path):
+    def __init__(self, predictor, base_output_path, mqtt_client=None):
+       
         self.predictor = predictor
-        self.csv_path = csv_path
+        self.base_output_path = base_output_path
+        self.mqtt_client = mqtt_client
+        
+        # Creiamo la cartella di output se non esiste
+        if not os.path.exists(self.base_output_path):
+            os.makedirs(self.base_output_path)
+            logger.info(f"📂 Cartella creata: {self.base_output_path}")
 
     def process_data(self, data):
-        """
-        Questa è la nostra CALLBACK FUNCTION.
-        Viene chiamata ogni volta che il Fetcher riceve un messaggio MQTT.
-        """
-        logger.info(f"📥 Ricevuto pacchetto telemetry: {data.get('measurement_id', 'N/A')}")
-
-        # 1. Chiediamo al modello di fare la predizione
+        # 1. Recupero ID dispositivo
+        pump_id = data.get('device_id', 'unknown_device')
+        
+        # 2. Esecuzione Inferenza
         predicted_state = self.predictor.predict(data)
         
-        # 2. Arricchiamo il dato con il risultato dell'IA
+        # 3. Arricchimento Payload
         data['predicted_state'] = predicted_state
         data['inference_timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        logger.info(f"🔮 Risultato Inferenza: {predicted_state}")
+        logger.info(f"🔮 [{pump_id}] Predizione: {predicted_state}")
 
-        # 3. Salvataggio su CSV
-        self._save_to_csv(data)
+        # 4. Salvataggio su file specifico per pompa
+        self._save_to_device_csv(pump_id, data)
 
-    def _save_to_csv(self, data):
+        # 5. Pubblicazione MQTT (Topic dinamico per lo scaling)
+        if self.mqtt_client:
+            output_topic = f"factory/pumps/{pump_id}/predictions"
+            self.mqtt_client.publish(output_topic, json.dumps(data))
+
+    def _save_to_device_csv(self, pump_id, data):
+        # Generiamo il path: es. /app/data/output/PUMP-001.csv
+        file_path = os.path.join(self.base_output_path, f"{pump_id}.csv")
+        
         df = pd.DataFrame([data])
-        # Scriviamo l'header solo se il file è nuovo
-        file_exists = os.path.isfile(self.csv_path)
-        df.to_csv(self.csv_path, mode='a', index=False, header=not file_exists)
+        file_exists = os.path.isfile(file_path)
+        
+        # Scriviamo in append sul file specifico
+        df.to_csv(file_path, mode='a', index=False, header=not file_exists)
