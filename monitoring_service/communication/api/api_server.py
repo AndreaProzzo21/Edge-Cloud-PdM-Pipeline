@@ -8,7 +8,7 @@ def create_app(core_manager):
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"], # In produzione metti l'IP specifico
+        allow_origins=["*"], 
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -17,7 +17,6 @@ def create_app(core_manager):
     # Injection del CoreManager per renderlo accessibile alle route
     app.state.core_manager = core_manager
     
-    # Includiamo i router
     app.include_router(pumps.router, prefix="/api/v1")
     
     return app

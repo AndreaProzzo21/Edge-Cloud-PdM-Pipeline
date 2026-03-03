@@ -1,4 +1,3 @@
-# api/routes/pumps.py
 from fastapi import APIRouter, Request, HTTPException, Query
 from typing import Optional
 

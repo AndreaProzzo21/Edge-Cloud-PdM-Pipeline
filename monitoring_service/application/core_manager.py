@@ -16,10 +16,10 @@ class CoreManager:
             state = raw_payload.get("state", "UNKNOWN")
             pump_id = raw_payload.get("device_id", "unknown")
             
-            # --- STRATEGIA DI LOGGING SMART ---
+            
             if state in ["WARNING", "BROKEN", "FAULTY"]:
                 health = raw_payload.get('health_percent', 0)
-                # Usiamo WARNING per colorare il log nel terminale (se supportato)
+               
                 self.logger.warning(
                     f"🚨 ALERT: {pump_id} is {state}! Health: {health}% | "
                     f"Vib: {raw_payload.get('vibration_rms')} | Temp: {raw_payload.get('temperature')}°C"
