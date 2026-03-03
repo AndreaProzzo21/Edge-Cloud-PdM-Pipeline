@@ -1,6 +1,6 @@
 
 services:
-  # --- INFRASTRUTTURA ---
+  
   mosquitto:
     image: eclipse-mosquitto:latest
     container_name: inference_broker
@@ -23,7 +23,7 @@ services:
     networks:
       - pump_network
 
-  # --- MICROSERVIZI ---
+  
   inference_engine:
     build: ./inference_service
     container_name: inference_engine
@@ -71,6 +71,8 @@ services:
     environment:
       - WDS_SOCKET_PORT=3001
       - CHOKIDAR_USEPOLLING=true
+    env_file: 
+      - .env
     stdin_open: true
     tty: true
     networks:
