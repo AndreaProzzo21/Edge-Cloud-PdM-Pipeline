@@ -2,9 +2,9 @@
 
 ## Overview
 
-This project implements an end-to-end **Cloud-Native Predictive Maintenance (PdM)** pipeline for industrial centrifugal pumps. The system has transitioned from hardware-based simulation to a fully containerized **Digital Twin Environment**.
+This project implements an end-to-end **Cloud-Native Predictive Maintenance (PdM) pipeline** for industrial centrifugal pumps. The system has transitioned from hardware-based simulation to a fully containerized Digital Twin Environment.
 
-Instead of static datasets, the pipeline uses high-fidelity Python simulators that model physical correlations (ISO 10816) and non-linear degradation curves. The architecture is a **Distributed Microservices Ecosystem** deployed on **AWS (EC2)**, designed for real-time scale (100+ devices).
+The entire cloud infrastructure is provisioned and managed via Infrastructure as Code (IaC) using **Terraform**, ensuring a reproducible and automated deployment of the AWS (EC2) ecosystem. Instead of static datasets, the pipeline uses high-fidelity Python simulators that model physical correlations (ISO 10816) and non-linear degradation curves. The architecture is a **Distributed Microservices** Ecosystem designed for real-time scale (100+ devices).
 
 ---
 
@@ -37,38 +37,86 @@ The project is engineered as a decoupled microservices architecture, where the s
 * **Hot-Loading**: The service "consumes" pre-trained models and performs real-time scaling and prediction on incoming raw MQTT streams.
 * **Real-time Pipeline**: `Raw MQTT Data` → `StandardScaler` → `Random Forest Predictor` → `Persistent JSON/CSV Logs`.
 
+### 📊 Service C: Monitoring Layer (Backend & Storage)
+* **Technology**: FastAPI, InfluxDB 2.8.
+
+* **Role**: The core data management hub.
+
+* **Data Manager**: Persists telemetry and predictions into InfluxDB using optimized batch writes.
+
+* **Core Manager**: Handles business logic, state filtering, and smart logging to highlight critical anomalies.
+
+* **API Server**: Exposes REST endpoints (/api/v1/status) for the frontend.
+
+### 💻 Service D: Presentation Layer (Frontend)
+Technology: React.js, Axios.
+
+* **Role**: A dedicated operational dashboard for end-users.
+
+* **Live Fleet Monitoring**: Automatic data refresh every 3 seconds.
+
+* **Global Analytics: High-level** stats on total assets, average health, and failure counts.
+
+* **Detail Views**: Expandable panels for deep-dives into sensory data (Vibration X/Y/Z, Pressure, Current).
+
 ---
 
-## Preliminar Component Architecture
+## 🏗️ Integrated System Architecture & MLOps Workflow
 
-The diagram below highlights the separation between the **Training Data Generation** and the **Real-time Inference Service**.
+The diagram below illustrates the complete lifecycle of the project: from the **Offline Training Phase** (using the Training Simulator and InfluxDB export) to the **Online Monitoring Phase** (where the Production Simulator feeds the live AI Dashboard).
 
 ```mermaid
 graph TD
     subgraph Simulators ["DIGITAL TWIN LAYER"]
-        A1[Training Simulator] -->|MQTT + Ground Truth| B
-        A2[Production Simulator] -->|MQTT Raw Data| B
+        A1[Training Simulator] -->|1. MQTT + Ground Truth| B
+        A2[Production Simulator] -->|4. MQTT Raw Data| B
     end
 
-    subgraph Infrastructure ["AWS CLOUD (EC2)"]
-        B[Mosquitto Broker] --> C[Acquisition Service]
-        B --> D[Inference Service]
+    subgraph Infrastructure ["AWS CLOUD (EC2) - DOCKER ECOSYSTEM"]
+        B[Mosquitto Broker]
         
+        %% Acquisition & Training Path
+        B --> C[Acquisition Service]
         C --> E[(InfluxDB 2.8)]
+        
+        %% Real-Time Inference Path
+        B --> D[Inference Service]
         D --> F[Random Forest Predictor]
-        F --> G[(Prediction Logs)]
+        F -->|Enriched Data| B
+        
+        %% Monitoring & UI Path
+        B --> M[Monitoring Service]
+        M --> E
+        G[FastAPI Server] -->|Query| E
+        H[React Frontend] -->|REST API| G
     end
 
-    subgraph MLOps ["OFFLINE PHASE"]
-        E -.->|CSV Export| H[Model Training]
-        H -.->|Serialized .pkl| F
+    subgraph MLOps ["OFFLINE PHASE (Local Workstation)"]
+        E -.->|2. CSV Export| I[Model Training & Scaling]
+        I -.->|3. Serialized .pkl| F
     end
 
+    %% Styling
     style Simulators fill:#f1f8ff,stroke:#0366d6,stroke-width:1px
     style Infrastructure fill:#fff,stroke:#333,stroke-width:1px
     style MLOps fill:#fff5f5,stroke:#cb2431,stroke-width:1px,stroke-dasharray: 5 5
+    style H fill:#f6ffed,stroke:#52c41a,stroke-width:2px
+    style G fill:#f6ffed,stroke:#52c41a,stroke-width:1px
 
 ```
+
+---
+
+### 🔄 Detailed Pipeline Breakdown
+
+1. **Data Generation & Collection**: The **Training Simulator** generates high-fidelity datasets with labels (Ground Truth). These are collected via MQTT and stored in **InfluxDB**.
+2. **Offline Model Synthesis**: Data is exported to a local environment to train the **Random Forest** model without impacting cloud performance. This results in serialized `.pkl` files.
+3. **Model Deployment**: The trained artifacts are uploaded back to the **Inference Service** on AWS, enabling real-time diagnostics.
+4. **Live Monitoring Loop**:
+* The **Production Simulator** sends live telemetry.
+* The **Inference Service** predicts the pump state and republishes it to the broker.
+* The **Monitoring Service** saves everything to InfluxDB.
+* The **React Frontend** fetches the processed data via the **FastAPI** gateway.
 
 ---
 
@@ -94,15 +142,16 @@ The **Production Simulator** includes a **Chaos Engine** to validate model robus
 
 ---
 
-## 📦 Technology Stack
+### 📦 Technology Stack
 
 | Component | Technology | Role |
 | --- | --- | --- |
 | **Simulators** | Python 3.12 (Threading) | Digital Twin & Chaos injection |
-| **Cloud Provider** | AWS (EC2) | Infrastructure hosting |
+| **MLOps** | Scikit-Learn | Offline Training (Random Forest) |
 | **Broker** | Eclipse Mosquitto | MQTT message orchestration |
-| **Database** | InfluxDB 2.8 | Time-series data lake |
-| **Inference** | Scikit-Learn | Real-time ML Prediction |
+| **Backend API** | FastAPI | High-performance REST API |
+| **Frontend** | React 18 | Real-time Health Dashboard |
+| **Storage** | InfluxDB 2.8 | Time-series Data Lake |
 
 ---
 
@@ -112,7 +161,7 @@ The **Production Simulator** includes a **Chaos Engine** to validate model robus
 * **Phase 2**: Cloud Acquisition Service & InfluxDB 2.8 time-series integration.
 * **Phase 3**: Real-time Inference Engine on AWS (Random Forest deployment).
 
-### Next Step: Real-Time Monitoring Microservice
+### Current Step: Real-Time Monitoring Microservice
 
 The upcoming evolution focuses on a centralized monitoring dashboard to visualize pump health and system telemetry. Two architectural paths are under consideration:
 
